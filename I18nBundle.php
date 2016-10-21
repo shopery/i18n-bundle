@@ -8,6 +8,6 @@ class I18nBundle extends Bundle
 {
     protected function createContainerExtension()
     {
-        return null;
+        return new DependencyInjection\I18nExtension();
     }
 }

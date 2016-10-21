@@ -32,13 +32,13 @@ class PrefixedPath implements RouteStrategy
         $this->defaultIsPrefixed = $this->getOption($options, self::DEFAULT_IS_PREFIXED, false);
 
         $this->prefixedLocales = ($this->defaultLocaleSetWithoutPrefix())
-            ? array_diff($allLocales, [$this->defaultLocale])
-            : $allLocales;
+            ? array_diff($allLocales, [$this->defaultLocale]) //Remove if exists
+            : array_merge([$this->defaultLocale], $allLocales); //Ensure it exists
     }
 
     public function pathWithLocale($path)
     {
-        $possibleLocaleInPath = $this->firstHierarchyLevelOfPath($path);
+        //TODO
     }
 
     public function pathMustBeLocalized($path)
@@ -97,17 +97,22 @@ class PrefixedPath implements RouteStrategy
      */
     private function firstHierarchyLevelOfPath($path, $prefix = '')
     {
-        //Homogenise prefix with what's expected (i.e., something like: '/prefix');
-        $prefix = '/'.ltrim($prefix, '/');
-        $prefix = rtrim($prefix, '/');
-
-        //Remove prefix if matches in path
         if (!empty($prefix) && strpos($path, $prefix) === 0) {
             $path = substr($path, strlen($prefix));
         }
 
-        $pathHierarchy = explode('/', $path, 3);
+        $pathHierarchy = explode('/', ltrim($path, '/'), 2);
 
-        return count($pathHierarchy) > 1 ? $pathHierarchy[1] : null;
+        return count($pathHierarchy) > 0 ? $pathHierarchy[0] : null;
+    }
+
+    /**
+     * @return string[]
+     */
+    public function allLocales()
+    {
+        return $this->defaultIsPrefixed
+            ? $this->prefixedLocales
+            : array_merge([$this->defaultLocale], $this->prefixedLocales);
     }
 }

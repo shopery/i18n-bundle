@@ -30,4 +30,9 @@ interface RouteStrategy
      * @return string[]
      */
     public function localesWhichMayMatchPath($path);
+
+    /**
+     * @return string[]
+     */
+    public function allLocales();
 }

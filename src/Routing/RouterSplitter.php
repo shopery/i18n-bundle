@@ -27,7 +27,6 @@ class RouterSplitter implements RouterInterface
      * @param string[] $locales
      */
     public function __construct(
-        array $locales,
         RouteStrategy $routeStrategy,
         array $options = array(),
         RequestContext $context = null
@@ -35,7 +34,6 @@ class RouterSplitter implements RouterInterface
         $this->globalRouter = new CachedRouter($options, $context);
 
         $this->localizedRouter = new LocalizedRouter(
-            $locales,
             $routeStrategy,
             $options,
             $context
@@ -83,13 +81,6 @@ class RouterSplitter implements RouterInterface
 
     public function generate($name, $parameters = array(), $referenceType = self::ABSOLUTE_PATH)
     {
-        if (empty($parameters['_locale'])) {
-            throw new \InvalidArgumentException(sprintf(
-                "'_locale' parameter required in %s to generate a route. Double-check it's added in the upper layers",
-                self::class
-            ));
-        }
-
         try {
             $this->localizedRouter->generate($name, $parameters, $referenceType);
         } catch (RouteNotFoundException $e) {

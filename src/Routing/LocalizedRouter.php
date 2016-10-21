@@ -3,18 +3,13 @@
 namespace Shopery\Bundle\I18nBundle\Routing;
 
 use Shopery\Bundle\I18nBundle\Routing\RouteStrategy\RouteStrategy;
-use Symfony\Component\Config\Resource\FileResource;
-use Symfony\Component\Routing\Exception\MethodNotAllowedException;
-use Symfony\Component\Routing\Exception\ResourceNotFoundException;
 use Symfony\Component\Routing\Exception\RouteNotFoundException;
 use Symfony\Component\Routing\RequestContext;
 use Symfony\Component\Routing\RouteCollection;
 use Symfony\Component\Routing\RouterInterface;
-use Symfony\Component\Translation\TranslatorInterface;
 
 class LocalizedRouter implements RouterInterface
 {
-    private $locales;
     private $routeStrategy;
     private $options;
     private $context;
@@ -23,12 +18,10 @@ class LocalizedRouter implements RouterInterface
 
     /**
      * LocalizedRouter constructor.
-     * @param string[] $locales
      * @param array $options
      * @param RequestContext|null $context
      */
     public function __construct(
-        array $locales,
         RouteStrategy $routeStrategy,
         array $options,
         RequestContext $context = null
@@ -37,7 +30,7 @@ class LocalizedRouter implements RouterInterface
         $this->options = $options;
         $this->context = $context;
 
-        foreach ($this->locales as $locale) {
+        foreach ($routeStrategy->allLocales() as $locale) {
             $this->inners[$locale] = new CachedRouter($options, $context, $locale);
         }
     }
@@ -77,36 +70,42 @@ class LocalizedRouter implements RouterInterface
 
     public function generate($name, $parameters = array(), $referenceType = self::ABSOLUTE_PATH)
     {
-        //TODO:: THIS FUNCTION
-        if (empty($parameters['_locale'])) {
-            //TODO:: Don't crash, ensure locale is defined, or set current, or set default
-            throw new \InvalidArgumentException(sprintf(
-                "'_locale' parameter required in %s to generate a route. Double-check it's added in the upper layers",
-                self::class
-            ));
-        }
+        $locale = (isset($parameters['_locale']) && in_array($parameters['_locale'], $this->locales()))
+            ? $parameters['_locale']
+            : $this->requestLocale();
 
-        try {
-            $this->localizedRouter->generate($name, $parameters, $referenceType);
-        } catch (RouteNotFoundException $e) {
-            $this->globalRouter->generate($name, $parameters, $referenceType);
-        }
+        return $this->inners[$locale]->generate($name, $parameters, $referenceType);
     }
 
     public function match($pathinfo)
     {
-        //TODO:: THIS FUNCTION
-        if ($this->routeStrategy->pathMustBeLocalized($pathinfo)) {
-            return $this->localizedRouter->match($pathinfo);
-        }
-        if ($this->routeStrategy->pathMustBeGlobal($pathinfo)) {
-            return $this->globalRouter->match($pathinfo);
+        $lastError = new RouteNotFoundException(sprintf("No locale can match path: %s", $pathinfo));
+
+        foreach ($this->routeStrategy->localesWhichMayMatchPath($pathinfo) as $locale) {
+            try {
+                return $this->inners[$locale]->match($pathinfo);
+            } catch (RouteNotFoundException $e) {
+                $lastError = $e;
+            }
         }
 
-        try {
-            return $this->globalRouter->match($pathinfo);
-        } catch (RouteNotFoundException $e) {
-            return $this->localizedRouter->match($pathinfo);
-        }
+        throw $lastError;
+    }
+
+    /**
+     * @return string[]
+     */
+    private function locales()
+    {
+        return array_keys($this->inners);
+    }
+
+    /**
+     * @return string
+     */
+    private function requestLocale()
+    {
+        //TODO:: This properly
+        return $this->routeStrategy->allLocales()[0];
     }
 }

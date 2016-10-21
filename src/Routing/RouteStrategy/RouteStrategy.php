@@ -12,7 +12,12 @@ interface RouteStrategy
 {
     public function __construct(array $options);
 
-    public function pathWithLocale($path);
+    /**
+     * @param string $path
+     * @param string $locale
+     * @return string
+     */
+    public function pathWithLocale($path, $locale);
 
     /**
      * @param string $path

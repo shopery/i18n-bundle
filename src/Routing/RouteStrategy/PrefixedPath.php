@@ -8,6 +8,8 @@
 namespace Shopery\Bundle\I18nBundle\Routing\RouteStrategy;
 
 
+use Symfony\Component\Routing\Exception\RouteNotFoundException;
+
 class PrefixedPath implements RouteStrategy
 {
     const ALL_LOCALES = 'all_locales';
@@ -36,9 +38,19 @@ class PrefixedPath implements RouteStrategy
             : array_merge([$this->defaultLocale], $allLocales); //Ensure it exists
     }
 
-    public function pathWithLocale($path)
+    public function pathWithLocale($path, $locale)
     {
-        //TODO
+        if (!in_array($locale, $this->allLocales())) {
+            throw new RouteNotFoundException(sprintf(
+                "Cannot generate route for locale %s, available ones are:%s",
+                $locale,
+                '"'.implode('","', $this->allLocales()).'""'
+            ));
+        }
+
+        return ($locale === $this->defaultLocale && $this->defaultLocaleSetWithoutPrefix())
+            ? $path
+            : '/'.$locale.$path;
     }
 
     public function pathMustBeLocalized($path)

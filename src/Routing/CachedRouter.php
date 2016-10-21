@@ -2,10 +2,8 @@
 
 namespace Shopery\Bundle\I18nBundle\Routing;
 
-use Symfony\Component\Config\Resource\FileResource;
-use Symfony\Component\Routing\Exception\MethodNotAllowedException;
-use Symfony\Component\Routing\Exception\ResourceNotFoundException;
-use Symfony\Component\Routing\Exception\RouteNotFoundException;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Symfony\Component\Routing\Matcher\UrlMatcherInterface;
 use Symfony\Component\Routing\RequestContext;
 use Symfony\Component\Routing\RouteCollection;
 use Symfony\Component\Routing\RouterInterface;
@@ -17,6 +15,10 @@ class CachedRouter implements RouterInterface
     private $context;
     private $locale;
 
+    private $collection;
+    private $matcher;
+    private $generator;
+
     /**
      * @param string|null $locale
      */
@@ -27,59 +29,139 @@ class CachedRouter implements RouterInterface
         $this->locale = $locale;
     }
 
-    public function generate($name, $parameters = array(), $referenceType = self::ABSOLUTE_PATH)
-    {
-        try {
-            return parent::generate($name, $parameters, $referenceType);
-        } catch (RouteNotFoundException $e) {
-            return parent::generate($this->locale . '__' . $name, $parameters, $referenceType);
-        }
-    }
-
-    public function initializeRouteCollection(RouteCollection $collection)
-    {
-        $this->collection = new RouteCollection();
-
-        foreach ($collection->all() as $name => $route) {
-            $route = clone $route;
-            $route->setDefault('_locale', $this->locale);
-
-            $translatedPath = $translator->trans($name, [], 'routes', $this->locale);
-            if ($translatedPath !== $name) {
-                $route->setPath($translatedPath);
-            }
-
-            $name = $this->locale . '__' . $name;
-            $route->setPath($pathTransformer($route->getPath(), $this->locale));
-
-            $this->collection->add($name, $route);
-        }
-
-        $this->collection->addResource(new FileResource(__FILE__));
-        foreach ($collection->getResources() as $resource) {
-            $this->collection->addResource($resource);
-        }
-
-        $this->warmUp($this->options['cache_dir']);
-    }
-
     public function setContext(RequestContext $context)
     {
-        // TODO: Implement setContext() method.
+        $this->context = $context;
+
+        if (null !== $this->matcher) {
+            $this->getMatcher()->setContext($context);
+        }
+        if (null !== $this->generator) {
+            $this->getGenerator()->setContext($context);
+        }
     }
 
     public function getContext()
     {
-        // TODO: Implement getContext() method.
+        return $this->context;
+    }
+
+    public function initializeRouteCollection(RouteCollection $collection)
+    {
+        //TODO
+        $this->collection = $collection;
+    }
+
+    public function generate($name, $parameters = array(), $referenceType = self::ABSOLUTE_PATH)
+    {
+        //TODO:: If wrong cache in generator... Crash...???
+        $this->getGenerator()->generate($name, $parameters, $referenceType);
     }
 
     public function getRouteCollection()
     {
-        // TODO: Implement getRouteCollection() method.
+        if (null === $this->collection) {
+            //TODO:: What to do? Q.Q Should never happen
+        }
+
+        return $this->collection;
     }
 
     public function match($pathinfo)
     {
-        // TODO: Implement match() method.
+        //TODO:: If wrong cache in matcher... Crash...???
+        $this->getMatcher()->match($pathinfo);
+    }
+
+    /**
+     * Gets the UrlMatcher instance associated with this Router.
+     *
+     * @return UrlMatcherInterface A UrlMatcherInterface instance
+     */
+    public function getMatcher()
+    {
+        if (null !== $this->matcher) {
+            return $this->matcher;
+        }
+
+        if (null === $this->options['cache_dir'] || null === $this->options['matcher_cache_class']) {
+            $this->matcher = new $this->options['matcher_class']($this->getRouteCollection(), $this->context);
+            if (method_exists($this->matcher, 'addExpressionLanguageProvider')) {
+                foreach ($this->expressionLanguageProviders as $provider) {
+                    $this->matcher->addExpressionLanguageProvider($provider);
+                }
+            }
+
+            return $this->matcher;
+        }
+
+        $class = $this->options['matcher_cache_class'];
+        $baseClass = $this->options['matcher_base_class'];
+        $expressionLanguageProviders = $this->expressionLanguageProviders;
+        $that = $this; // required for PHP 5.3 where "$this" cannot be use()d in anonymous functions. Change in Symfony 3.0.
+
+        $cache = $this->getConfigCacheFactory()->cache($this->options['cache_dir'].'/'.$class.'.php',
+            function (ConfigCacheInterface $cache) use ($that, $class, $baseClass, $expressionLanguageProviders) {
+                $dumper = $that->getMatcherDumperInstance();
+                if (method_exists($dumper, 'addExpressionLanguageProvider')) {
+                    foreach ($expressionLanguageProviders as $provider) {
+                        $dumper->addExpressionLanguageProvider($provider);
+                    }
+                }
+
+                $options = array(
+                    'class' => $class,
+                    'base_class' => $baseClass,
+                );
+
+                $cache->write($dumper->dump($options), $that->getRouteCollection()->getResources());
+            }
+        );
+
+        require_once $cache->getPath();
+
+        return $this->matcher = new $class($this->context);
+    }
+
+    /**
+     * Gets the UrlGenerator instance associated with this Router.
+     *
+     * @return UrlGeneratorInterface A UrlGeneratorInterface instance
+     */
+    public function getGenerator()
+    {
+        if (null !== $this->generator) {
+            return $this->generator;
+        }
+
+        if (null === $this->options['cache_dir'] || null === $this->options['generator_cache_class']) {
+            $this->generator = new $this->options['generator_class']($this->getRouteCollection(), $this->context, $this->logger);
+        } else {
+            $class = $this->options['generator_cache_class'];
+            $baseClass = $this->options['generator_base_class'];
+            $that = $this; // required for PHP 5.3 where "$this" cannot be use()d in anonymous functions. Change in Symfony 3.0.
+            $cache = $this->getConfigCacheFactory()->cache($this->options['cache_dir'].'/'.$class.'.php',
+                function (ConfigCacheInterface $cache) use ($that, $class, $baseClass) {
+                    $dumper = $that->getGeneratorDumperInstance();
+
+                    $options = array(
+                        'class' => $class,
+                        'base_class' => $baseClass,
+                    );
+
+                    $cache->write($dumper->dump($options), $that->getRouteCollection()->getResources());
+                }
+            );
+
+            require_once $cache->getPath();
+
+            $this->generator = new $class($this->context, $this->logger);
+        }
+
+        if ($this->generator instanceof ConfigurableRequirementsInterface) {
+            $this->generator->setStrictRequirements($this->options['strict_requirements']);
+        }
+
+        return $this->generator;
     }
 }

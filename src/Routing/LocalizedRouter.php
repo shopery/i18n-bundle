@@ -37,8 +37,33 @@ class LocalizedRouter implements RouterInterface
 
     public function initializeRouteCollection(RouteCollection $collection)
     {
-        foreach ($this->inners as $inner) {
-            $inner->initializeRouteCollection(clone $collection);
+        foreach ($this->inners as $locale => $inner) {
+
+            $innerCollection = new RouteCollection();
+
+            foreach ($collection->all() as $name => $route) {
+                $route = clone $route;
+                $route->setDefault('_locale', $locale);
+
+                //TODO:: Which translator?
+                $translatedPath = $translator->trans($name, [], 'routes', $locale);
+                if ($translatedPath !== $name) {
+                    $route->setPath($translatedPath);
+                }
+
+                $name = $locale.'__'.$name;
+
+                $route->setPath(
+                    $this->routeStrategy->pathWithLocale(
+                        $route->getPath(),
+                        $locale
+                    )
+                );
+
+                $innerCollection->add($name, $route);
+            }
+
+            $inner->initializeRouteCollection($innerCollection);
         }
     }
 

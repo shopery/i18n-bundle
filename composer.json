@@ -1,0 +1,28 @@
+{
+    "name": "shopery/i18n-bundle",
+    "description": "Add i18n support in shopery applications",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Berny Cantos",
+            "email": "berny.cantos@shopery.com"
+        },
+        {
+            "name": "Marc Romera",
+            "email": "marc.romera@shopery.com"
+        }
+    ],
+    "type": "symfony-bundle",
+    "require": {
+        "symfony/config": ">=2.3",
+        "symfony/dependency-injection": ">=2.3",
+        "symfony/http-kernel": ">=2.3",
+        "symfony/routing": ">=2.3",
+        "symfony/translation": ">=2.3"
+    },
+    "autoload": {
+        "psr-4": {
+            "Shopery\\Bundle\\I18nBundle\\": "src"
+        }
+    }
+}

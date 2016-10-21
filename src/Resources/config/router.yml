@@ -1,0 +1,41 @@
+services:
+
+    shopery.i18n.router:
+        class: 'Shopery\Bundle\I18nBundle\Routing\Router'
+        arguments:
+            collector: '@shopery.i18n.route_collector'
+            # Following parameters will be filled in the compiler pass
+            context: null
+
+    shopery.i18n.route_collector:
+        alias: 'shopery.i18n.resource_route_collector'
+
+    shopery.i18n.resource_route_collector:
+        class: 'Shopery\Bundle\I18nBundle\Routing\Collector\ResourceRouteCollector'
+        arguments:
+            loader: '@routing.loader'
+            # Following parameters will be filled in the compiler pass
+            resource: null
+            type: null
+
+    shopery.i18n.resolver_route_collector:
+        decorates: 'shopery.i18n.route_collector'
+        alias: 'shopery.i18n.route_collector'
+        class: 'Shopery\Bundle\I18nBundle\Routing\Collector\ResolverRouteCollector'
+        arguments:
+            - '@shopery.i18n.route_collector.inner'
+            - '@service_container'
+
+    shopery.i18n.route_collector:
+        alias: 'shopery.i18n.resolver_route_collector'
+
+    shopery.i18n.cached_cached_collector:
+        decorates: 'shopery.i18n.route_collector'
+        alias: 'shopery.i18n.route_collector'
+        class: 'Shopery\Bundle\I18nBundle\Routing\Collector\CachedRouteCollector'
+        arguments:
+            - '@shopery.i18n.route_collector.inner'
+            - 'original-routing.serialized'
+
+    shopery.i18n.route_collector:
+        alias: 'shopery.i18n.cached_cached_collector'

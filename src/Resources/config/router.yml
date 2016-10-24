@@ -3,39 +3,64 @@ services:
     shopery.i18n.router:
         class: 'Shopery\Bundle\I18nBundle\Routing\Router'
         arguments:
-            collector: '@shopery.i18n.route_collector'
+            - '@shopery.i18n.localized_router'
+            - '@shopery.i18n.route_collector'
+            - '@shopery.i18n.route_strategy'
+            - '@shopery.i18n.cached_router_factory'
             # Following parameters will be filled in the compiler pass
-            context: null
+            - null # context
+        tags:
+            -
+                name:   kernel.event_listener
+                event:  route_collection_refresh
+                method: initializeRouteCollection
 
     shopery.i18n.route_collector:
-        alias: 'shopery.i18n.resource_route_collector'
+        class: 'Shopery\Bundle\I18nBundle\Routing\Collector\ResourceRouteCollector'
+        arguments: ~
 
     shopery.i18n.resource_route_collector:
         class: 'Shopery\Bundle\I18nBundle\Routing\Collector\ResourceRouteCollector'
+        decorates: 'shopery.i18n.route_collector'
         arguments:
-            loader: '@routing.loader'
+            - '@routing.loader'
             # Following parameters will be filled in the compiler pass
-            resource: null
-            type: null
+            - null # resource
+            - null # resource type
 
     shopery.i18n.resolver_route_collector:
         decorates: 'shopery.i18n.route_collector'
-        alias: 'shopery.i18n.route_collector'
         class: 'Shopery\Bundle\I18nBundle\Routing\Collector\ResolverRouteCollector'
         arguments:
-            - '@shopery.i18n.route_collector.inner'
+            - '@shopery.i18n.resolver_route_collector.inner'
             - '@service_container'
-
-    shopery.i18n.route_collector:
-        alias: 'shopery.i18n.resolver_route_collector'
 
     shopery.i18n.cached_cached_collector:
         decorates: 'shopery.i18n.route_collector'
-        alias: 'shopery.i18n.route_collector'
         class: 'Shopery\Bundle\I18nBundle\Routing\Collector\CachedRouteCollector'
         arguments:
-            - '@shopery.i18n.route_collector.inner'
-            - 'original-routing.serialized'
+            - '@shopery.i18n.cached_cached_collector.inner'
+            - '@event_dispatcher'
+            - '@config_cache_factory'
+            - '%kernel.cache_dir%/original-routing.serialized_php'
 
-    shopery.i18n.route_collector:
-        alias: 'shopery.i18n.cached_cached_collector'
+    shopery.i18n.prefixed_without_default_strategy:
+        class: 'Shopery\Bundle\I18nBundle\Routing\RouteStrategy\PrefixedPath'
+        arguments:
+            - [ 'es', 'ca', 'en' ]
+            - 'es'
+
+    shopery.i18n.route_strategy:
+        alias: 'shopery.i18n.prefixed_without_default_strategy'
+
+    shopery.i18n.cached_router_factory:
+        class: 'Shopery\Bundle\I18nBundle\Routing\CachedRouterFactory'
+        arguments:
+            - '%kernel.cache_dir%'
+
+    shopery.i18n.localized_router:
+        class: 'Shopery\Bundle\I18nBundle\Routing\LocalizedRouter'
+        arguments:
+            - '@shopery.i18n.route_strategy'
+            - '@shopery.i18n.cached_router_factory'
+            - '@translator'

@@ -37,7 +37,7 @@ class RouterSetupFromFramework implements CompilerPassInterface
     private function definition(ContainerBuilder $container, $name, $clone = false)
     {
         $definition = $container->findDefinition($name);
-        $className = $definition->getClass();
+        $className = $this->definitionClassName($definition, $container);
 
         if ($clone !== false) {
             $definition = clone $definition;
@@ -60,8 +60,19 @@ class RouterSetupFromFramework implements CompilerPassInterface
                 $indexByParameter[$parameter]
             );
         }
-
         return $result;
+    }
+
+    private function definitionClassName(Definition $definition, ContainerBuilder $container)
+    {
+        $className = $definition->getClass();
+        for (; empty($className) && $definition instanceof DefinitionDecorator;
+               $definition = $container->findDefinition($definition->getParent())) {
+
+            $className = $definition->getClass();
+        }
+
+        return $className;
     }
 
     private function injectArguments(Definition $definition, array $parameters)

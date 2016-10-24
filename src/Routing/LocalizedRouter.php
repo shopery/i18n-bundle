@@ -3,55 +3,50 @@
 namespace Shopery\Bundle\I18nBundle\Routing;
 
 use Shopery\Bundle\I18nBundle\Routing\RouteStrategy\RouteStrategy;
-use Symfony\Component\Routing\Exception\RouteNotFoundException;
+use Symfony\Component\Config\Resource\FileResource;
+use Symfony\Component\Routing\Exception\ResourceNotFoundException;
 use Symfony\Component\Routing\RequestContext;
 use Symfony\Component\Routing\RouteCollection;
 use Symfony\Component\Routing\RouterInterface;
+use Symfony\Component\Translation\TranslatorInterface;
 
 class LocalizedRouter implements RouterInterface
 {
     private $routeStrategy;
-    private $options;
-    private $context;
+    private $translator;
     /** @var  CachedRouter[] */
-    private $inners;
+    private $inners = [];
 
-    /**
-     * LocalizedRouter constructor.
-     * @param array $options
-     * @param RequestContext|null $context
-     */
     public function __construct(
         RouteStrategy $routeStrategy,
-        array $options,
-        RequestContext $context = null
+        CachedRouterFactory $cachedRouterFactory,
+        TranslatorInterface $translator
     ) {
         $this->routeStrategy = $routeStrategy;
-        $this->options = $options;
-        $this->context = $context;
+        $this->translator = $translator;
 
         foreach ($routeStrategy->allLocales() as $locale) {
-            $this->inners[$locale] = new CachedRouter($options, $context, $locale);
+            $this->inners[$locale] = $cachedRouterFactory->create($locale);
         }
     }
 
     public function initializeRouteCollection(RouteCollection $collection)
     {
+        $resources = [];
         foreach ($this->inners as $locale => $inner) {
 
             $innerCollection = new RouteCollection();
 
-            foreach ($collection->all() as $name => $route) {
+            foreach ($collection as $name => $route) {
                 $route = clone $route;
                 $route->setDefault('_locale', $locale);
 
-                //TODO:: Which translator?
-                $translatedPath = $translator->trans($name, [], 'routes', $locale);
+                $translatedPath = $this->translator->trans($name, [], 'routes', $locale);
                 if ($translatedPath !== $name) {
                     $route->setPath($translatedPath);
                 }
 
-                $name = $locale.'__'.$name;
+                $name = $this->localizedRouteName($locale, $name);
 
                 $route->setPath(
                     $this->routeStrategy->pathWithLocale(
@@ -63,8 +58,16 @@ class LocalizedRouter implements RouterInterface
                 $innerCollection->add($name, $route);
             }
 
-            $inner->initializeRouteCollection($innerCollection);
+            $innerResources = $inner->initializeRouteCollection($innerCollection);
+            /// TODO: Extract resources from Translator -> MessageCatalogue
+            $innerResources[] = new FileResource(
+                __DIR__ . '/../../Resources/translations/routes.' . $locale . '.yml'
+            );
+
+            $resources = array_merge($resources, $innerResources);
         }
+
+        return $resources;
     }
 
     public function setContext(RequestContext $context)
@@ -99,22 +102,25 @@ class LocalizedRouter implements RouterInterface
             ? $parameters['_locale']
             : $this->requestLocale();
 
-        return $this->inners[$locale]->generate($name, $parameters, $referenceType);
+        return $this->inners[$locale]->generate(
+            $this->localizedRouteName($locale, $name),
+            $parameters,
+            $referenceType
+        );
     }
 
     public function match($pathinfo)
     {
-        $lastError = new RouteNotFoundException(sprintf("No locale can match path: %s", $pathinfo));
-
+        $lastError = null;
         foreach ($this->routeStrategy->localesWhichMayMatchPath($pathinfo) as $locale) {
             try {
                 return $this->inners[$locale]->match($pathinfo);
-            } catch (RouteNotFoundException $e) {
+            } catch (ResourceNotFoundException $e) {
                 $lastError = $e;
             }
         }
 
-        throw $lastError;
+        throw $lastError ?: new ResourceNotFoundException(sprintf('No locale can match path: %s', $pathinfo));
     }
 
     /**
@@ -132,5 +138,13 @@ class LocalizedRouter implements RouterInterface
     {
         //TODO:: This properly
         return $this->routeStrategy->allLocales()[0];
+    }
+
+    /**
+     * @return string
+     */
+    private function localizedRouteName($locale, $name)
+    {
+        return $locale . '__' . $name;
     }
 }

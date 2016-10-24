@@ -2,21 +2,31 @@
 
 namespace Shopery\Bundle\I18nBundle\Routing\Collector;
 
+use Shopery\Bundle\I18nBundle\Routing\Event\RouteCollectionRefresh;
 use Shopery\Bundle\I18nBundle\Routing\RouteCollector;
-use Symfony\Component\Config\ConfigCache;
-use Symfony\Component\Config\ConfigCacheFactory;
+
+use Symfony\Component\Config\ConfigCacheInterface;
+use Symfony\Component\Config\ConfigCacheFactoryInterface;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\Routing\RouteCollection;
 
 class CachedRouteCollector implements RouteCollector
 {
     private $inner;
+    private $dispatcher;
     private $filename;
-    /** @var ConfigCacheFactory */
     private $cacheFactory;
     private $collection;
 
-    public function __construct(RouteCollector $inner, $filename)
-    {
+    public function __construct(
+        RouteCollector $inner,
+        EventDispatcherInterface $dispatcher,
+        ConfigCacheFactoryInterface $cacheFactory,
+        $filename
+    ) {
         $this->inner = $inner;
+        $this->dispatcher = $dispatcher;
+        $this->cacheFactory = $cacheFactory;
         $this->filename = $filename;
     }
 
@@ -29,11 +39,6 @@ class CachedRouteCollector implements RouteCollector
         return $this->collection;
     }
 
-    public function setCacheConfigFactory(ConfigCacheFactory $configCacheFactory)
-    {
-        $this->cacheFactory = $configCacheFactory;
-    }
-
     private function loadFromCache()
     {
         if (!$this->cacheFactory) {
@@ -42,17 +47,26 @@ class CachedRouteCollector implements RouteCollector
 
         $cache = $this->cacheFactory->cache(
             $this->filename,
-            function (ConfigCache $cache) {
+            function (ConfigCacheInterface $cache) {
                 $collection = $this->getFreshRouteCollection();
+                $this->dispatchRefreshRouteCollection($collection);
                 $cache->write(serialize($collection), $collection->getResources());
             }
         );
 
-        return unserialize($cache->getPath());
+        return unserialize(file_get_contents($cache->getPath()));
     }
 
     private function getFreshRouteCollection()
     {
         return $this->inner->getRouteCollection();
+    }
+
+    private function dispatchRefreshRouteCollection(RouteCollection $collection)
+    {
+        $this->dispatcher->dispatch(
+            RouteCollectionRefresh::EVENT_NAME,
+            new RouteCollectionRefresh($collection)
+        );
     }
 }

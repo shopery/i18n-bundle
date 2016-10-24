@@ -10,8 +10,6 @@ namespace Shopery\Bundle\I18nBundle\Routing\RouteStrategy;
 
 interface RouteStrategy
 {
-    public function __construct(array $options);
-
     /**
      * @param string $path
      * @param string $locale

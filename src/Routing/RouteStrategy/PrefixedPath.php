@@ -1,37 +1,27 @@
 <?php
-/**
- * This file is part of shopery/shopery
- *
- * Copyright (c) 2016 Shopery.com
- */
 
 namespace Shopery\Bundle\I18nBundle\Routing\RouteStrategy;
-
 
 use Symfony\Component\Routing\Exception\RouteNotFoundException;
 
 class PrefixedPath implements RouteStrategy
 {
-    const ALL_LOCALES = 'all_locales';
-    const DEFAULT_LOCALE = 'default_locale';
-    const DEFAULT_IS_PREFIXED = 'default_is_prefixed';
-
-    /** @var string[] */
-    private $prefixedLocales;
     /** @var string|null */
     private $defaultLocale;
     /** @var bool */
     private $defaultIsPrefixed;
+    /** @var string[] */
+    private $prefixedLocales;
 
     /**
-     * @param bool $defaultIsPrefixed
+     * @param array $allLocales
      * @param string $defaultLocale
+     * @param bool $defaultIsPrefixed
      */
-    public function __construct(array $options)
+    public function __construct(array $allLocales = [], $defaultLocale = null, $defaultIsPrefixed = false)
     {
-        $allLocales = $this->getOption($options, self::ALL_LOCALES, []);
-        $this->defaultLocale = $this->getOption($options, self::DEFAULT_LOCALE, null);
-        $this->defaultIsPrefixed = $this->getOption($options, self::DEFAULT_IS_PREFIXED, false);
+        $this->defaultLocale = $defaultLocale;
+        $this->defaultIsPrefixed = $defaultIsPrefixed;
 
         $this->prefixedLocales = ($this->defaultLocaleSetWithoutPrefix())
             ? array_diff($allLocales, [$this->defaultLocale]) //Remove if exists
@@ -75,24 +65,15 @@ class PrefixedPath implements RouteStrategy
     {
         $possibleLocaleInPath = $this->firstHierarchyLevelOfPath($path);
 
-        if (array_key_exists($possibleLocaleInPath, $this->prefixedLocales)) {
+        if (array_search($possibleLocaleInPath, $this->prefixedLocales) !== false) {
             return [$possibleLocaleInPath];
         }
+
         if ($this->defaultLocaleSetWithoutPrefix()) {
             return [$this->defaultLocale];
         }
 
         return [];
-    }
-
-    /**
-     * @param string $name
-     * @param mixed|null $default
-     * @return mixed|null
-     */
-    private function getOption(array $options, $name, $default = null)
-    {
-        return array_key_exists($name, $options) ? $options[$name] : $default;
     }
 
     /**

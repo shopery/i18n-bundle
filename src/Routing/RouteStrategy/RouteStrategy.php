@@ -1,41 +1,29 @@
 <?php
-/**
- * This file is part of shopery/shopery
- *
- * Copyright (c) 2016 Shopery.com
- */
 
 namespace Shopery\Bundle\I18nBundle\Routing\RouteStrategy;
-
 
 interface RouteStrategy
 {
     /**
      * @param string $path
      * @param string $locale
+     * @param array $locales
+     *
      * @return string
      */
-    public function pathWithLocale($path, $locale);
+    public function withLocale($path, $locale, array $locales);
 
     /**
      * @param string $path
+     *
      * @return bool
      */
-    public function pathMustBeLocalized($path);
-    /**
-     * @param string $path
-     * @return bool
-     */
-    public function pathMustBeGlobal($path);
+    public function isLocalized($path, array $locales);
 
     /**
      * @param string $path
+     *
      * @return string[]
      */
-    public function localesWhichMayMatchPath($path);
-
-    /**
-     * @return string[]
-     */
-    public function allLocales();
+    public function matchingLocales($path, array $locales);
 }

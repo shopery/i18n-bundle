@@ -52,7 +52,7 @@ class CachedRouter implements RouterInterface
         return $this->context;
     }
 
-    public function initializeRouteCollection(RouteCollection $collection)
+    public function initialize(RouteCollection $collection)
     {
         $this->collection = $collection;
 
@@ -70,9 +70,7 @@ class CachedRouter implements RouterInterface
 
     public function generate($name, $parameters = array(), $referenceType = self::ABSOLUTE_PATH)
     {
-        return $this
-            ->getGenerator()
-            ->generate($name, $parameters, $referenceType);
+        return $this->getGenerator()->generate($name, $parameters, $referenceType);
     }
 
     public function getRouteCollection()
@@ -88,9 +86,7 @@ class CachedRouter implements RouterInterface
 
     public function match($pathinfo)
     {
-        return $this
-            ->getMatcher()
-            ->match($pathinfo);
+        return $this->getMatcher()->match($pathinfo);
     }
 
     /**

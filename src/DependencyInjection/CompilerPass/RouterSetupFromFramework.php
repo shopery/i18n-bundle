@@ -43,9 +43,7 @@ class RouterSetupFromFramework implements CompilerPassInterface
             $definition = clone $definition;
         }
 
-        $definition->setClass(
-            $container->getParameterBag()->resolveValue($className)
-        );
+        $definition->setClass($className);
 
         return $definition;
     }
@@ -72,7 +70,7 @@ class RouterSetupFromFramework implements CompilerPassInterface
             $className = $definition->getClass();
         }
 
-        return $className;
+        return $container->getParameterBag()->resolveValue($className);
     }
 
     private function injectArguments(Definition $definition, array $parameters)

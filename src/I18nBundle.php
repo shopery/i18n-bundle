@@ -14,8 +14,12 @@ class I18nBundle extends Bundle
         );
     }
 
-    protected function createContainerExtension()
+    public function getContainerExtension()
     {
-        return new DependencyInjection\I18nExtension();
+        if (!$this->extension) {
+            $this->extension =  new DependencyInjection\I18nExtension();
+        }
+
+        return $this->extension;
     }
 }

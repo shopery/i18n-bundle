@@ -11,17 +11,17 @@ class CachedRouterFactory
         $this->cacheDir = $cacheDir;
     }
 
-    public function create($locale)
+    public function create($locale = null)
     {
-        $dirName = $this->cacheDir . '/' . 'cached-router';
+        $dirName = $this->cacheDir;
         if ($locale) {
-            $dirName .= '-' . $locale;
+            $dirName .= '/' . $locale;
         }
 
         if (!is_dir($dirName)) {
             mkdir($dirName, 0777, true);
         }
 
-        return new CachedRouter($dirName . '/serialized', $locale);
+        return new CachedRouter($dirName . '/routing.phpser', $locale);
     }
 }

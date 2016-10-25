@@ -100,7 +100,7 @@ class LocalizedRouter implements RouterInterface
     {
         $locale = (isset($parameters['_locale']) && in_array($parameters['_locale'], $this->locales()))
             ? $parameters['_locale']
-            : $this->requestLocale();
+            : $this->contextLocale();
 
         return $this->inners[$locale]->generate(
             $this->localizedRouteName($locale, $name),
@@ -134,10 +134,11 @@ class LocalizedRouter implements RouterInterface
     /**
      * @return string
      */
-    private function requestLocale()
+    private function contextLocale()
     {
-        //TODO:: This properly
-        return $this->routeStrategy->allLocales()[0];
+        $context = $this->getContext();
+        //If not in context, return default(first) one. TODO:: Improve how to get default language
+        return $context->getParameter('_locale') ?: $this->routeStrategy->allLocales()[0];
     }
 
     /**

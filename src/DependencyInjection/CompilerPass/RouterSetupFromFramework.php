@@ -18,11 +18,6 @@ class RouterSetupFromFramework implements CompilerPassInterface
             'options',
         ]);
 
-        $definition = $this->definition($container, 'shopery.i18n.router');
-        $this->injectArguments($definition, [
-            'context' => $arguments['context'],
-        ]);
-
         $definition = $this->definition($container, 'shopery.i18n.resource_route_collector');
         $this->injectArguments($definition, [
             'resource' => $arguments['resource'],
@@ -30,6 +25,9 @@ class RouterSetupFromFramework implements CompilerPassInterface
                         ? $arguments['options']['type']
                         : null,
         ]);
+
+        $definition = $this->definition($container, 'shopery.i18n.router');
+        $definition->addMethodCall('setContext', [ $arguments['context'] ]);
 
         $container->setAlias('router', 'shopery.i18n.router');
     }

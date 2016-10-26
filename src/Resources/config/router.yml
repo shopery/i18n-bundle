@@ -1,30 +1,38 @@
 services:
 
     shopery.i18n.router:
+        public: false
         class: 'Shopery\Bundle\I18nBundle\Routing\Router'
         arguments:
-            - '@shopery.i18n.route_collector'
+            - '%shopery.i18n.available_languages%'
+            - '@shopery.i18n.router_factory'
             - '@shopery.i18n.route_strategy'
-            - '@shopery.i18n.cached_router_factory'
-            - '@translator'
-            - %shopery.i18n.available_languages%
-            # Following parameters will be filled in compiler pass
             - null # context
-        calls:
-            - [ 'setRouteCache', [ '@shopery.i18n.route_cache' ] ]
 
-    shopery.i18n.route_cache:
-        class: 'Symfony\Component\Config\ConfigCacheInterface'
-        factory: [ '@config_cache_factory', 'cache' ]
+    shopery.i18n.router_factory:
+        public: false
+        class: 'Shopery\Bundle\I18nBundle\Routing\CachedRouterFactory'
         arguments:
-            - '%shopery.i18n.cache_dir%/routing.phpser'
-            - [ '@shopery.i18n.router', 'setRouteCache' ]
+            - '%shopery.i18n.cache_dir%'
+            - 'routing.d'
+
+    shopery.i18n.route_strategy.prefixed_path_always:
+        public: false
+        class: 'Shopery\Bundle\I18nBundle\Routing\RouteStrategy\PrefixedPathStrategy'
+        arguments: [ false ]
+
+    shopery.i18n.route_strategy.prefixed_path_but_default:
+        public: false
+        class: 'Shopery\Bundle\I18nBundle\Routing\RouteStrategy\PrefixedPathStrategy'
+        arguments: [ true ]
 
     shopery.i18n.route_collector:
+        public: false
         class: 'Shopery\Bundle\I18nBundle\Routing\Collector\ResourceRouteCollector'
         arguments: ~
 
     shopery.i18n.resource_route_collector:
+        public: false
         class: 'Shopery\Bundle\I18nBundle\Routing\Collector\ResourceRouteCollector'
         decorates: 'shopery.i18n.route_collector'
         arguments:
@@ -34,19 +42,38 @@ services:
             - null # resource type
 
     shopery.i18n.resolver_route_collector:
+        public: false
         decorates: 'shopery.i18n.route_collector'
         class: 'Shopery\Bundle\I18nBundle\Routing\Collector\ResolverRouteCollector'
         arguments:
             - '@shopery.i18n.resolver_route_collector.inner'
             - '@service_container'
 
-    shopery.i18n.prefixed_without_default_strategy:
-        class: 'Shopery\Bundle\I18nBundle\Routing\RouteStrategy\PrefixedPathStrategy'
-
-    shopery.i18n.route_strategy:
-        alias: 'shopery.i18n.prefixed_without_default_strategy'
-
-    shopery.i18n.cached_router_factory:
-        class: 'Shopery\Bundle\I18nBundle\Routing\CachedRouterFactory'
+    shopery.i18n.locale_route_collector:
+        public: false
+        decorates: 'shopery.i18n.route_collector'
+        class: 'Shopery\Bundle\I18nBundle\Routing\Collector\LocaleRouteCollector'
         arguments:
-            - '%shopery.i18n.cache_dir%/routing.d'
+            - '@shopery.i18n.locale_route_collector.inner'
+            - '@shopery.i18n.route_strategy'
+            - '@shopery.i18n.router_factory'
+            - '@translator'
+            - '%shopery.i18n.available_languages%'
+
+    shopery.i18n.cached_route_collector:
+        public: false
+        class: 'Shopery\Bundle\I18nBundle\Routing\Collector\CachedRouteCollector'
+        arguments:
+            - '@shopery.i18n.route_collector'
+            - '@config_cache_factory'
+            - '@shopery.i18n.router_factory'
+            - '%shopery.i18n.cache_dir%'
+            - 'routing.phpsrlzd'
+
+    shopery.i18n.router_cache_warmer:
+        public: false
+        class: 'Shopery\Bundle\I18nBundle\CacheWarmer\RoutingCacheWarmer'
+        arguments:
+            - '@shopery.i18n.cached_route_collector'
+        tags:
+            - { name: kernel.cache_warmer }

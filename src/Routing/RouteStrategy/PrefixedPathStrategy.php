@@ -15,7 +15,7 @@ class PrefixedPathStrategy implements RouteStrategy
     {
         $detectedPrefix = $this->detectPrefix($path);
 
-        return array_key_exists($detectedPrefix, $this->$locales);
+        return in_array($detectedPrefix, $locales);
     }
 
     public function withLocale($path, $locale, array $locales)
@@ -41,7 +41,7 @@ class PrefixedPathStrategy implements RouteStrategy
             return [$possibleLocaleInPath];
         }
 
-        return [reset($locales)];
+        return $this->butDefault ? [reset($locales)] : [];
     }
 
     private function detectPrefix($path)

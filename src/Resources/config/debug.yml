@@ -1,0 +1,10 @@
+services:
+
+    shopery.i18n.router_debug:
+        public: false
+        class: 'Shopery\Bundle\I18nBundle\Routing\DebugRouter'
+        decorates: 'shopery.i18n.router'
+        arguments:
+            - '@shopery.i18n.router_debug.inner'
+            - '@shopery.i18n.cached_route_collector'
+            - null

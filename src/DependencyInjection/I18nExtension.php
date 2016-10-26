@@ -16,18 +16,11 @@ class I18nExtension extends Extension
 
     public function load(array $configs, ContainerBuilder $container)
     {
-        $locator = new FileLocator(__DIR__ . '/../Resources/config');
-        $loader = new YamlFileLoader($container, $locator);
-        $loader->load('router.yml');
-
-        $config = $this->processConfiguration(
-            new Configuration($this->getAlias()),
-            $configs
-        );
+        $config = $this->processConfig($configs);
 
         $languages = $this->extractLanguages(
-            $config['available_languages'],
-            $config['default_language']
+            $config['languages']['available'],
+            $config['languages']['default']
         );
 
         $cachePath = $config['cache']['path'];
@@ -36,15 +29,44 @@ class I18nExtension extends Extension
             'shopery.i18n.available_languages' => $languages,
             'shopery.i18n.cache_dir' => $cachePath,
         ]);
+
+        $loader = $this->loader($container);
+        $loader->load('router.yml');
+
+        if ($config['debug']) {
+            $loader->load('debug.yml');
+        }
+
+        $container->setAlias(
+            'shopery.i18n.route_strategy',
+            substr($config['route_strategy'], 1)
+        );
     }
 
-    private function extractLanguages($languages, $defaultLanguage):array
+    private function extractLanguages($languages, $defaultLanguage)
     {
-        $languages = array_filter($languages, function ($value) use ($defaultLanguage) {
+        $notDefault = function ($value) use ($defaultLanguage) {
             return $value !== $defaultLanguage;
-        });
+        };
+
+        $languages = array_filter($languages, $notDefault);
         array_unshift($languages, $defaultLanguage);
 
         return $languages;
+    }
+
+    private function loader($container)
+    {
+        $locator = new FileLocator(__DIR__ . '/../Resources/config');
+
+        return new YamlFileLoader($container, $locator);
+    }
+
+    private function processConfig(array $configs):array
+    {
+        return $this->processConfiguration(
+            new Configuration($this->getAlias()),
+            $configs
+        );
     }
 }

@@ -14,7 +14,6 @@ class CachedRouteCollector implements RouteCollector
     private $cacheFactory;
     private $routerFactory;
     private $cacheDir;
-    private $pathName;
 
     private $collection;
 
@@ -22,14 +21,12 @@ class CachedRouteCollector implements RouteCollector
         RouteCollector $inner,
         ConfigCacheFactoryInterface $cacheFactory,
         CachedRouterFactory $routerFactory,
-        $cacheDir,
-        $pathName
+        $cacheDir
     ) {
         $this->inner = $inner;
         $this->cacheFactory = $cacheFactory;
         $this->routerFactory = $routerFactory;
         $this->cacheDir = $cacheDir;
-        $this->pathName = $pathName;
     }
 
     public function warmUp($cacheDir)
@@ -57,7 +54,7 @@ class CachedRouteCollector implements RouteCollector
 
     public function cache()
     {
-        $filename = $this->cacheDir . '/' . $this->pathName;
+        $filename = $this->cacheDir . '/' . 'routing.phpsrlzd';
         $callable = function (ConfigCacheInterface $cache) {
             $this->collection = $collection = $this->inner->getRouteCollection();
             $resources = $collection->getResources();

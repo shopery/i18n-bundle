@@ -68,7 +68,6 @@ services:
             - '@config_cache_factory'
             - '@shopery.i18n.router_factory'
             - '%shopery.i18n.cache_dir%'
-            - 'routing.phpsrlzd'
 
     shopery.i18n.router_cache_warmer:
         public: false

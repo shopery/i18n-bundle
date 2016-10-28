@@ -16,7 +16,7 @@ class I18nExtension extends Extension
 
     public function load(array $configs, ContainerBuilder $container)
     {
-        $config = $this->processConfig($configs);
+        $config = $this->processConfig($configs, $container);
 
         $languages = $this->extractLanguages(
             $config['languages']['available'],
@@ -62,10 +62,18 @@ class I18nExtension extends Extension
         return new YamlFileLoader($container, $locator);
     }
 
-    private function processConfig(array $configs):array
+    /**
+     * @{inheritdoc}
+     */
+    public function getConfiguration(array $config, ContainerBuilder $container)
+    {
+        return new Configuration($this->getAlias());
+    }
+
+    private function processConfig(array $configs, ContainerBuilder $container):array
     {
         return $this->processConfiguration(
-            new Configuration($this->getAlias()),
+            $this->getConfiguration($configs, $container),
             $configs
         );
     }

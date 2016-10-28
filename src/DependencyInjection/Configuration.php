@@ -80,6 +80,7 @@ class Configuration implements ConfigurationInterface
         ];
 
         $root
+            ->isRequired()
             ->beforeNormalization()
                 ->ifString()
                 ->then(function ($v) use ($knownStrategies) {

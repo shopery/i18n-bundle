@@ -37,9 +37,9 @@ class CachedRouterFactory implements RouterFactory
     {
         $generator = $this->generator($locale, $context);
         $matcher = $this->matcher($locale, $context);
-        $routeCollection = $this->routing($locale);
+        $routingFilename = $this->routingFilename($locale);
 
-        return new CachedRouter($generator, $matcher, $routeCollection, $context);
+        return new CachedRouter($generator, $matcher, $routingFilename, $context);
     }
 
     public function dump(RouteCollection $collection, $locale)
@@ -136,16 +136,6 @@ class CachedRouterFactory implements RouterFactory
         }
 
         return $className;
-    }
-
-    /**
-     * @return RouteCollection
-     */
-    private function routing($locale)
-    {
-        return unserialize(
-            file_get_contents($this->routingFilename($locale))
-        );
     }
 
     private function routingFilename($locale = null)

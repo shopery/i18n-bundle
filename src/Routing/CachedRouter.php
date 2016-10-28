@@ -12,18 +12,20 @@ class CachedRouter implements RouterInterface
 {
     private $generator;
     private $matcher;
-    private $routeCollection;
+    private $routingFilename;
     private $context;
+    /** @var RouteCollection */
+    private $routeCollection;
 
     public function __construct(
         UrlGeneratorInterface $generator,
         UrlMatcherInterface $matcher,
-        RouteCollection $routeCollection,
+        $routingFilename,
         RequestContext $context = null
     ) {
         $this->generator = $generator;
         $this->matcher = $matcher;
-        $this->routeCollection = $routeCollection;
+        $this->routingFilename = $routingFilename;
         $this->context = $context;
     }
 
@@ -39,8 +41,18 @@ class CachedRouter implements RouterInterface
         return $this->context;
     }
 
+    /**
+     * @return RouteCollection
+     */
     public function getRouteCollection()
     {
+        //As it's a heavy file and mostly not used, read it only when requested
+        if (!isset($this->routeCollection)) {
+            $this->routeCollection = unserialize(
+                file_get_contents($this->routingFilename)
+            );
+        }
+
         return $this->routeCollection;
     }
 

@@ -10,7 +10,7 @@ class I18nBundle extends Bundle
     public function build(ContainerBuilder $container)
     {
         $container->addCompilerPass(
-            new DependencyInjection\CompilerPass\RouterSetupFromFramework()
+            new DependencyInjection\CompilerPass\OverrideDefaultRouter()
         );
     }
 

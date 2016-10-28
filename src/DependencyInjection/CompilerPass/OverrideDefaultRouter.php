@@ -7,7 +7,7 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\DefinitionDecorator;
 
-class RouterSetupFromFramework implements CompilerPassInterface
+class OverrideDefaultRouter implements CompilerPassInterface
 {
     public function process(ContainerBuilder $container)
     {

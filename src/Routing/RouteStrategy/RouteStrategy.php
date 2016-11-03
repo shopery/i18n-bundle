@@ -23,7 +23,7 @@ interface RouteStrategy
     /**
      * @param string $path
      *
-     * @return string[]
+     * @return string|null
      */
-    public function matchingLocales($path, array $locales);
+    public function matchingLocale($path, array $locales);
 }

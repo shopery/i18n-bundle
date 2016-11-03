@@ -15,7 +15,8 @@ class PrefixedPathStrategy implements RouteStrategy
     {
         $detectedPrefix = $this->detectPrefix($path);
 
-        return in_array($detectedPrefix, $locales);
+        return $detectedPrefix !== null
+        && in_array($detectedPrefix, $locales);
     }
 
     public function withLocale($path, $locale, array $locales)
@@ -33,22 +34,30 @@ class PrefixedPathStrategy implements RouteStrategy
         return '/' . $locale . $path;
     }
 
-    public function matchingLocales($path, array $locales)
+    public function matchingLocale($path, array $locales)
     {
         $possibleLocaleInPath = $this->detectPrefix($path);
 
-        if (array_search($possibleLocaleInPath, $locales) !== false) {
-            return [$possibleLocaleInPath];
+        if ($possibleLocaleInPath !== null
+            && array_search($possibleLocaleInPath, $locales) !== false
+        ) {
+            return $possibleLocaleInPath;
         }
 
-        return $this->butDefault ? [reset($locales)] : [];
+        return $this->butDefault ? reset($locales) : null;
     }
 
+    /**
+     * @param string $path
+     * @return string|null
+     */
     private function detectPrefix($path)
     {
         $path = trim($path, '/');
         if (preg_match('~^([^/]{2})(?:$|/)~', $path, $matches)) {
             return $matches[1];
         }
+
+        return null;
     }
 }

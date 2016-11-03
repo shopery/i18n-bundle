@@ -15,8 +15,7 @@ class PrefixedPathStrategy implements RouteStrategy
     {
         $detectedPrefix = $this->detectPrefix($path);
 
-        return $detectedPrefix !== null
-        && in_array($detectedPrefix, $locales);
+        return $detectedPrefix !== null && in_array($detectedPrefix, $locales);
     }
 
     public function withLocale($path, $locale, array $locales)

@@ -70,7 +70,7 @@ class I18nExtension extends Extension
         return new Configuration($this->getAlias());
     }
 
-    private function processConfig(array $configs, ContainerBuilder $container):array
+    private function processConfig(array $configs, ContainerBuilder $container)
     {
         return $this->processConfiguration(
             $this->getConfiguration($configs, $container),

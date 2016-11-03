@@ -56,33 +56,35 @@ class LocaleRouteCollector implements RouteCollector
     private function splitRoutes(RouteCollection $source)
     {
         $global = new RouteCollection();
-        $local = $this->createLocaleCollections();
+        $localeCollections = $this->createLocaleCollections();
 
         foreach ($source->all() as $name => $route) {
             if ($this->isGlobal($route)) {
                 $global->add($name, $route);
+                $this->addGlobalRouteTo($name, $route, $localeCollections);
             } else {
-                $this->translateRoute($name, $route, $local);
+                $this->addRouteTranslatedTo($name, $route, $localeCollections);
             }
         }
 
-        $this->factory->dump($global, null);
-        foreach ($local as $locale => $collection) {
+        foreach ($localeCollections as $locale => $collection) {
             $this->factory->dump($collection, $locale);
         }
 
-        foreach ($local as $locale => $collection) {
+        $allProcessedRoutes = [$global];
+        foreach ($localeCollections as $locale => $collection) {
             $processed = new RouteCollection();
             $this->transferResources($collection, $processed);
             foreach ($collection->all() as $name => $route) {
-                $processed->add('i18n_' . $locale . '__' . $name, $route);
+                if (!$this->isGlobal($route)) {
+                    $processed->add($this->prefixedRouteName($locale, $name), $route);
+                }
             }
-            $local[$locale] = $processed;
+
+            $allProcessedRoutes[] = $processed;
         }
 
-        $local[] = $global;
-
-        return array_values($local);
+        return array_values($allProcessedRoutes);
     }
 
     /**
@@ -90,7 +92,7 @@ class LocaleRouteCollector implements RouteCollector
      * @param Route $sourceRoute
      * @param RouteCollection[] $collections
      */
-    private function translateRoute($name, Route $sourceRoute, array $collections)
+    private function addRouteTranslatedTo($name, Route $sourceRoute, array $collections)
     {
         foreach ($this->locales as $locale) {
 
@@ -110,6 +112,20 @@ class LocaleRouteCollector implements RouteCollector
                 )
             );
 
+            $collections[$locale]->add($name, $route);
+        }
+    }
+
+    /**
+     * @param string $name
+     * @param Route $sourceRoute
+     * @param RouteCollection[] $collections
+     */
+    private function addGlobalRouteTo($name, Route $sourceRoute, array $collections)
+    {
+        foreach ($this->locales as $locale) {
+
+            $route = clone $sourceRoute;
             $collections[$locale]->add($name, $route);
         }
     }
@@ -138,8 +154,19 @@ class LocaleRouteCollector implements RouteCollector
      */
     private function appendCollections(RouteCollection $result, array $collections)
     {
-        foreach (array_reverse($collections) as $collection) {
+        foreach ($collections as $collection) {
             $result->addCollection($collection);
         }
+    }
+
+    /**
+     * @param string $locale
+     * @param string $routeName
+     *
+     * @return string
+     */
+    private function prefixedRouteName($locale, $routeName)
+    {
+        return 'i18n_'.$locale.'__'.$routeName;
     }
 }

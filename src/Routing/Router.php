@@ -3,8 +3,6 @@
 namespace Shopery\Bundle\I18nBundle\Routing;
 
 use Shopery\Bundle\I18nBundle\Routing\RouteStrategy\RouteStrategy;
-use Symfony\Component\Routing\Exception\ResourceNotFoundException;
-use Symfony\Component\Routing\Exception\RouteNotFoundException;
 use Symfony\Component\Routing\RequestContext;
 use Symfony\Component\Routing\RouteCollection;
 use Symfony\Component\Routing\RouterInterface;
@@ -16,8 +14,6 @@ class Router implements RouterInterface
     private $routeStrategy;
     private $context;
 
-    /** @var RouterInterface */
-    private $globalRouter;
     /** @var RouterInterface[] */
     private $localRouters = [];
 
@@ -46,7 +42,6 @@ class Router implements RouterInterface
     public function getRouteCollection()
     {
         $collection = new RouteCollection();
-        $collection->addCollection($this->globalRouter()->getRouteCollection());
         foreach ($this->localRouters() as $localRouter) {
             $collection->addCollection($localRouter->getRouteCollection());
         }
@@ -56,63 +51,26 @@ class Router implements RouterInterface
 
     public function generate($name, $parameters = array(), $referenceType = self::ABSOLUTE_PATH)
     {
-        if (isset($parameters['_locale'])) {
-            $router = $this->localRouter($parameters['_locale']);
-            $result = $this->tryGenerate($router, $name, $parameters, $referenceType);
-            if ($result instanceof \Exception === false) {
-                return $result;
-            }
-        }
+        $locale = (isset($parameters['_locale']))
+            ? $parameters['_locale']
+            : reset($this->locales);
 
-        $result = $this->tryGenerate($this->globalRouter(), $name, $parameters, $referenceType);
-
-        $locales = $this->locales;
-        reset($locales);
-        while ($result instanceof \Exception && current($locales) !== false) {
-            $router = $this->localRouter(current($locales));
-            $result = $this->tryGenerate($router, $name, $parameters, $referenceType);
-            next($locales);
-        }
-
-        if ($result instanceof \Exception) {
-            throw $result;
-        }
+        $router = $this->localRouter($locale);
+        $result = $router->generate($name, $parameters, $referenceType);
 
         return $result;
     }
 
-    private function tryGenerate(RouterInterface $router, $name, array $parameters, $referenceType)
-    {
-        try {
-            return $router->generate($name, $parameters, $referenceType);
-        } catch (RouteNotFoundException $e) {
-            return $e;
-        }
-    }
-
     public function match($pathInfo)
     {
-        $locales = $this->routeStrategy->matchingLocales($pathInfo, $this->locales);
-        foreach ($locales as $locale) {
-            $router = $this->localRouter($locale);
-            try {
-                return $router->match($pathInfo);
-            } catch (ResourceNotFoundException $e) {
-                // Fallback
-            }
+        $locale = $this->routeStrategy->matchingLocale($pathInfo, $this->locales);
+        if (!isset($locale)) {
+            $locale = reset($this->locales);
         }
 
-        return $this->globalRouter()->match($pathInfo);
-    }
+        $router = $this->localRouter($locale);
 
-    private function globalRouter()
-    {
-        if (!$this->globalRouter) {
-            $router = $this->factory->create($this->context);
-            $this->globalRouter = $router;
-        }
-
-        return $this->globalRouter;
+        return $router->match($pathInfo);
     }
 
     private function localRouter($locale)

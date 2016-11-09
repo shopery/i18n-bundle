@@ -11,13 +11,6 @@ class PrefixedPathStrategy implements RouteStrategy
         $this->butDefault = $butDefault;
     }
 
-    public function isLocalized($path, array $locales)
-    {
-        $detectedPrefix = $this->detectPrefix($path);
-
-        return $detectedPrefix !== null && in_array($detectedPrefix, $locales);
-    }
-
     public function withLocale($path, $locale, array $locales)
     {
         if ($this->butDefault) {

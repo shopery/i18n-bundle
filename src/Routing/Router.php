@@ -51,9 +51,13 @@ class Router implements RouterInterface
 
     public function generate($name, $parameters = array(), $referenceType = self::ABSOLUTE_PATH)
     {
-        $locale = (isset($parameters['_locale']))
-            ? $parameters['_locale']
-            : reset($this->locales);
+        if (isset($parameters['_locale'])) {
+            $locale = $parameters['_locale'];
+        } else if ($this->context->hasParameter('_locale')) {
+            $locale = $this->context->getParameter('_locale');
+        } else {
+            $locale = reset($this->locales);
+        }
 
         $router = $this->localRouter($locale);
         $result = $router->generate($name, $parameters, $referenceType);

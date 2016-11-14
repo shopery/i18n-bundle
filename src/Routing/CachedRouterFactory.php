@@ -8,7 +8,6 @@ use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Routing\Generator\Dumper\PhpGeneratorDumper;
 use Symfony\Component\Routing\Generator\UrlGenerator;
 use Symfony\Component\Routing\Matcher\Dumper\PhpMatcherDumper;
-use Symfony\Component\Routing\Matcher\UrlMatcher;
 use Symfony\Component\Routing\RequestContext;
 use Symfony\Component\Routing\RouteCollection;
 
@@ -106,7 +105,7 @@ class CachedRouterFactory implements RouterFactory
     }
 
     /**
-     * @return UrlMatcher
+     * @return RedirectableUrlMatcher
      */
     private function matcher($locale, $context)
     {

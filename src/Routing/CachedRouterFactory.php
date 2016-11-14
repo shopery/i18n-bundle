@@ -2,12 +2,12 @@
 
 namespace Shopery\Bundle\I18nBundle\Routing;
 
+use Symfony\Bundle\FrameworkBundle\Routing\RedirectableUrlMatcher;
 use Symfony\Component\Config\Resource\FileResource;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Routing\Generator\Dumper\PhpGeneratorDumper;
 use Symfony\Component\Routing\Generator\UrlGenerator;
 use Symfony\Component\Routing\Matcher\Dumper\PhpMatcherDumper;
-use Symfony\Component\Routing\Matcher\UrlMatcher;
 use Symfony\Component\Routing\RequestContext;
 use Symfony\Component\Routing\RouteCollection;
 
@@ -51,7 +51,7 @@ class CachedRouterFactory implements RouterFactory
         $filename = $this->matcherFilename($locale);
         $filesystem->dumpFile($filename, $dumper->dump([
             'class' => $className,
-            'base_class' => UrlMatcher::class,
+            'base_class' => RedirectableUrlMatcher::class,
         ]));
         $collection->addResource(new FileResource($filename));
 
@@ -105,7 +105,7 @@ class CachedRouterFactory implements RouterFactory
     }
 
     /**
-     * @return UrlMatcher
+     * @return RedirectableUrlMatcher
      */
     private function matcher($locale, $context)
     {

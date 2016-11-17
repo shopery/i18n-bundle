@@ -60,9 +60,9 @@ class Router implements RouterInterface
         }
 
         $router = $this->localRouter($locale);
-        $result = $router->generate($name, $parameters, $referenceType);
+        $router->setContext($this->context);
 
-        return $result;
+        return $router->generate($name, $parameters, $referenceType);
     }
 
     public function match($pathInfo)
@@ -73,6 +73,7 @@ class Router implements RouterInterface
         }
 
         $router = $this->localRouter($locale);
+        $router->setContext($this->context);
 
         return $router->match($pathInfo);
     }

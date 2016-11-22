@@ -6,6 +6,10 @@ use Shopery\Bundle\I18nBundle\Routing\RouteCollector;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\Routing\RouteCollection;
 
+/**
+ * Resolves the route parameters the same way Symfony's Router does.
+ * So, the code to resolve is as in there with some minor changes.
+ */
 class ResolverRouteCollector implements RouteCollector
 {
     private $inner;

@@ -2,19 +2,19 @@
 
 namespace Shopery\Bundle\I18nBundle\Routing;
 
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RequestContext;
-use Symfony\Component\Routing\RouterInterface;
 
 use Shopery\Bundle\I18nBundle\Routing\Collector\CachedRouteCollector;
 
-class DebugRouter implements RouterInterface
+class DebugRouter implements SymfonyRouterInterface
 {
     private $inner;
     private $collector;
     private $initialized = false;
 
     public function __construct(
-        RouterInterface $inner,
+        SymfonyRouterInterface $inner,
         CachedRouteCollector $collector
     ) {
         $this->inner = $inner;
@@ -46,6 +46,11 @@ class DebugRouter implements RouterInterface
     public function match($pathInfo)
     {
         return $this->initialize()->inner->match($pathInfo);
+    }
+
+    public function matchRequest(Request $request)
+    {
+        return $this->initialize()->inner->matchRequest($request);
     }
 
     private function initialize()

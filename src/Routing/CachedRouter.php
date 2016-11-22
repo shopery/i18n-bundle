@@ -2,13 +2,14 @@
 
 namespace Shopery\Bundle\I18nBundle\Routing;
 
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Symfony\Component\Routing\Matcher\RequestMatcherInterface;
 use Symfony\Component\Routing\Matcher\UrlMatcherInterface;
 use Symfony\Component\Routing\RequestContext;
 use Symfony\Component\Routing\RouteCollection;
-use Symfony\Component\Routing\RouterInterface;
 
-class CachedRouter implements RouterInterface
+class CachedRouter implements SymfonyRouterInterface
 {
     private $generator;
     private $matcher;
@@ -64,5 +65,15 @@ class CachedRouter implements RouterInterface
     public function match($pathinfo)
     {
         return $this->matcher->match($pathinfo);
+    }
+
+    public function matchRequest(Request $request)
+    {
+        if (!$this->matcher instanceof RequestMatcherInterface) {
+            // fallback to the default UrlMatcherInterface
+            return $this->matcher->match($request->getPathInfo());
+        }
+
+        return $this->matcher->matchRequest($request);
     }
 }

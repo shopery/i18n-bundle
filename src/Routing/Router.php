@@ -3,18 +3,18 @@
 namespace Shopery\Bundle\I18nBundle\Routing;
 
 use Shopery\Bundle\I18nBundle\Routing\RouteStrategy\RouteStrategy;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RequestContext;
 use Symfony\Component\Routing\RouteCollection;
-use Symfony\Component\Routing\RouterInterface;
 
-class Router implements RouterInterface
+class Router implements SymfonyRouterInterface
 {
     private $locales;
     private $factory;
     private $routeStrategy;
     private $context;
 
-    /** @var RouterInterface[] */
+    /** @var SymfonyRouterInterface[] */
     private $localRouters = [];
 
     public function __construct(
@@ -65,15 +65,17 @@ class Router implements RouterInterface
         return $router->generate($name, $parameters, $referenceType);
     }
 
+
+    public function matchRequest(Request $request)
+    {
+        $router = $this->contextualizedLocalRouterForPathInfo($request->getPathInfo());
+
+        return $router->matchRequest($request);
+    }
+
     public function match($pathInfo)
     {
-        $locale = $this->routeStrategy->matchingLocale($pathInfo, $this->locales);
-        if (!isset($locale)) {
-            $locale = reset($this->locales);
-        }
-
-        $router = $this->localRouter($locale);
-        $router->setContext($this->context);
+        $router = $this->contextualizedLocalRouterForPathInfo($pathInfo);
 
         return $router->match($pathInfo);
     }
@@ -95,5 +97,22 @@ class Router implements RouterInterface
         }
 
         return $this->localRouters;
+    }
+
+    /**
+     * @param string $pathInfo
+     * @return SymfonyRouterInterface
+     */
+    private function contextualizedLocalRouterForPathInfo($pathInfo)
+    {
+        $locale = $this->routeStrategy->matchingLocale($pathInfo, $this->locales);
+        if (!isset($locale)) {
+            $locale = reset($this->locales);
+        }
+
+        $router = $this->localRouter($locale);
+        $router->setContext($this->context);
+
+        return $router;
     }
 }

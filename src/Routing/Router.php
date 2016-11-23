@@ -32,6 +32,10 @@ class Router implements SymfonyRouterInterface
     public function setContext(RequestContext $context)
     {
         $this->context = $context;
+
+        foreach ($this->localRouters as $router) {
+            $router->setContext($this->context);
+        }
     }
 
     public function getContext()
@@ -60,7 +64,6 @@ class Router implements SymfonyRouterInterface
         }
 
         $router = $this->localRouter($locale);
-        $router->setContext($this->context);
 
         return $router->generate($name, $parameters, $referenceType);
     }
@@ -68,14 +71,14 @@ class Router implements SymfonyRouterInterface
 
     public function matchRequest(Request $request)
     {
-        $router = $this->contextualizedLocalRouterForPathInfo($request->getPathInfo());
+        $router = $this->localRouterForPathInfo($request->getPathInfo());
 
         return $router->matchRequest($request);
     }
 
     public function match($pathInfo)
     {
-        $router = $this->contextualizedLocalRouterForPathInfo($pathInfo);
+        $router = $this->localRouterForPathInfo($pathInfo);
 
         return $router->match($pathInfo);
     }
@@ -103,16 +106,13 @@ class Router implements SymfonyRouterInterface
      * @param string $pathInfo
      * @return SymfonyRouterInterface
      */
-    private function contextualizedLocalRouterForPathInfo($pathInfo)
+    private function localRouterForPathInfo($pathInfo)
     {
         $locale = $this->routeStrategy->matchingLocale($pathInfo, $this->locales);
         if (!isset($locale)) {
             $locale = reset($this->locales);
         }
 
-        $router = $this->localRouter($locale);
-        $router->setContext($this->context);
-
-        return $router;
+        return $this->localRouter($locale);
     }
 }

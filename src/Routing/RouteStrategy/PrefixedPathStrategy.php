@@ -23,7 +23,7 @@ class PrefixedPathStrategy implements RouteStrategy
             }
         }
 
-        return '/' . $locale . $path;
+        return '/'.$locale.$path;
     }
 
     public function matchingLocale($path, array $locales)
@@ -46,8 +46,12 @@ class PrefixedPathStrategy implements RouteStrategy
     private function detectPrefix($path)
     {
         $path = trim($path, '/');
-        if (preg_match('~^([^/]{2}|[^/]{5})(?:$|/)~', $path, $matches)) {
-            return $matches[1];
+        $regexLanguageDialect = '~^(?P<language>[a-z]{2})(\_(?P<dialect>[a-z]{2}))?(?:$|/)~';
+
+        if (preg_match($regexLanguageDialect, $path, $matches)) {
+            $dialect = isset($matches['dialect']) ? '_'.$matches['dialect'] : '';
+
+            return $matches['language'].$dialect;
         }
 
         return null;

@@ -4,6 +4,7 @@ namespace Shopery\Bundle\I18nBundle\Routing;
 
 use Shopery\Bundle\I18nBundle\Routing\RouteStrategy\RouteStrategy;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Routing\Exception\RouteNotFoundException;
 use Symfony\Component\Routing\RequestContext;
 use Symfony\Component\Routing\RouteCollection;
 
@@ -61,6 +62,12 @@ class Router implements SymfonyRouterInterface
             $locale = $this->context->getParameter('_locale');
         } else {
             $locale = reset($this->locales);
+        }
+
+        if (!in_array($locale, $this->locales)) {
+            throw new RouteNotFoundException(
+                sprintf('Unable to generate a URL with locale "%s" as such locale is not available.', $locale)
+            );
         }
 
         $router = $this->localRouter($locale);

@@ -46,7 +46,7 @@ class PrefixedPathStrategy implements RouteStrategy
     private function detectPrefix($path)
     {
         $path = trim($path, '/');
-        if (preg_match('~^([^/]{2})(?:$|/)~', $path, $matches)) {
+        if (preg_match('~^([^/]{2}|[^/]{5})(?:$|/)~', $path, $matches)) {
             return $matches[1];
         }
 

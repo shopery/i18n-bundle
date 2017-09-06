@@ -4,7 +4,7 @@ namespace Shopery\Bundle\I18nBundle\Routing\RouteStrategy;
 
 class PrefixedPathStrategy implements RouteStrategy
 {
-    private $butDefault;
+    protected $butDefault;
 
     public function __construct($butDefault = true)
     {
@@ -13,17 +13,29 @@ class PrefixedPathStrategy implements RouteStrategy
 
     public function withLocale($path, $locale, array $locales)
     {
+        return $this->localeHasPrefix($locale, $locales)
+            ? '/'.$locale.$path
+            : $path;
+    }
+
+    /**
+     * @param string $locale
+     * @param array $locales
+     * @return bool
+     */
+    protected function localeHasPrefix($locale, array $locales)
+    {
         if ($this->butDefault) {
             foreach ($locales as $defaultLocale) {
                 if ($locale === $defaultLocale) {
-                    return $path;
+                    return false;
                 }
 
                 break;
             }
         }
 
-        return '/'.$locale.$path;
+        return true;
     }
 
     public function matchingLocale($path, array $locales)
@@ -43,7 +55,7 @@ class PrefixedPathStrategy implements RouteStrategy
      * @param string $path
      * @return string|null
      */
-    private function detectPrefix($path)
+    protected function detectPrefix($path)
     {
         $path = trim($path, '/');
         $regexLanguageDialect = '~^(?P<language>[a-z]{2})(\_(?P<dialect>[a-z]{2}))?(?:$|/)~';

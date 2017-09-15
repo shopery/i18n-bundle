@@ -78,16 +78,19 @@ class Router implements SymfonyRouterInterface
 
     public function matchRequest(Request $request)
     {
-        $router = $this->localRouterForPathInfo($request->getPathInfo());
+        $locale = $this->matchingLocaleForPathInfo($request->getPathInfo());
 
-        return $router->matchRequest($request);
+        //A matching route will already have locale, but if RouteNotFound at least a proper default locale is set
+        $request->setDefaultLocale($locale);
+
+        return $this->localRouter($locale)->matchRequest($request);
     }
 
     public function match($pathInfo)
     {
-        $router = $this->localRouterForPathInfo($pathInfo);
+        $locale = $this->matchingLocaleForPathInfo($pathInfo);
 
-        return $router->match($pathInfo);
+        return $this->localRouter($locale)->match($pathInfo);
     }
 
     private function localRouter($locale)
@@ -111,15 +114,12 @@ class Router implements SymfonyRouterInterface
 
     /**
      * @param string $pathInfo
-     * @return SymfonyRouterInterface
+     * @return null|string
      */
-    private function localRouterForPathInfo($pathInfo)
+    private function matchingLocaleForPathInfo($pathInfo)
     {
         $locale = $this->routeStrategy->matchingLocale($pathInfo, $this->locales);
-        if (!isset($locale)) {
-            $locale = reset($this->locales);
-        }
 
-        return $this->localRouter($locale);
+        return isset($locale) ? $locale : reset($this->locales);
     }
 }

@@ -12,24 +12,31 @@ class OverrideDefaultRouter implements CompilerPassInterface
     public function process(ContainerBuilder $container)
     {
         $definition = $this->definition($container, 'router.default', true);
-        $arguments = $this->extractArguments($definition, [
-            'resource',
-            'context',
-            'options',
-        ]);
+        $arguments = $this->extractArguments(
+            $definition,
+            [
+                'resource',
+                'context',
+                'options',
+            ]
+        );
 
         $definition = $this->definition($container, 'shopery.i18n.resource_route_collector');
-        $this->injectArguments($definition, [
-            'resource' => $arguments['resource'],
-            'type' => isset($arguments['options']['type'])
-                        ? $arguments['options']['type']
-                        : null,
-        ]);
+        $this->injectArguments(
+            $definition,
+            [
+                'resource' => $arguments['resource'],
+                'type' => isset($arguments['options']['type'])
+                    ? $arguments['options']['type']
+                    : null,
+            ]
+        );
 
         $definition = $this->definition($container, 'shopery.i18n.router');
-        $definition->addMethodCall('setContext', [ $arguments['context'] ]);
+        $definition->addMethodCall('setContext', [$arguments['context']]);
 
-        $container->setAlias('router', 'shopery.i18n.router');
+        $alias = $container->setAlias('router', 'shopery.i18n.router');
+        $alias->setPublic(true);
     }
 
     private function definition(ContainerBuilder $container, $name, $clone = false)
@@ -62,9 +69,10 @@ class OverrideDefaultRouter implements CompilerPassInterface
     private function definitionClassName(Definition $definition, ContainerBuilder $container)
     {
         $className = $definition->getClass();
-        for (; empty($className) && $definition instanceof DefinitionDecorator;
-               $definition = $container->findDefinition($definition->getParent())) {
-
+        for (
+        ; empty($className) && $definition instanceof DefinitionDecorator;
+          $definition = $container->findDefinition($definition->getParent())
+        ) {
             $className = $definition->getClass();
         }
 
